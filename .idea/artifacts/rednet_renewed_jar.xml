@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="rednet-renewed:jar">
+    <output-path>D:/libraries</output-path>
+    <root id="archive" name="RenetRenewed.jar">
+      <element id="module-output" name="RenetRenewed" />
+    </root>
+  </artifact>
+</component>

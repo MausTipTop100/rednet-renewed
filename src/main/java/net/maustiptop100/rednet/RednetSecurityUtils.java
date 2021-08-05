@@ -1,6 +1,7 @@
 package net.maustiptop100.rednet;
 
 import javax.crypto.*;
+import javax.crypto.spec.IvParameterSpec;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
@@ -20,45 +21,50 @@ public interface RednetSecurityUtils {
         return KeyGenerator.getInstance(symmetricKeyAlgorithm).generateKey();
     }
 
-    static int publicKey2Int(PublicKey publicKey) {
-        return RednetUtils.getIntFromBytes(publicKey.getEncoded());
+    static IvParameterSpec generateParameters() {
+        byte[] iv = new byte[16];
+        new SecureRandom().nextBytes(iv);
+        return new IvParameterSpec(iv);
     }
 
-    static PublicKey int2PublicKey(int data) throws NoSuchAlgorithmException, InvalidKeySpecException {
-        return KeyFactory.getInstance(asymmetricKeyAlgorithm).generatePublic(new X509EncodedKeySpec(RednetUtils.getBytesFromInt(data)));
+    static byte[] publicKey2Bytes(PublicKey publicKey) {
+        return publicKey.getEncoded();
     }
 
-    static SecretKey unwrapSecretKeyFromInt(int data, PrivateKey privateKey)
+    static PublicKey bytes2PublicKey(byte[] data) throws NoSuchAlgorithmException, InvalidKeySpecException {
+        return KeyFactory.getInstance(asymmetricKeyAlgorithm).generatePublic(new X509EncodedKeySpec(data));
+    }
+
+    static SecretKey unwrapSecretKey(byte[] data, PrivateKey privateKey)
             throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException
     {
-        byte[] bytes = RednetUtils.getBytesFromInt(data);
         Cipher cipher = Cipher.getInstance(wrapAlgorithm);
         cipher.init(Cipher.UNWRAP_MODE, privateKey);
-        return (SecretKey) cipher.unwrap(bytes, symmetricKeyAlgorithm, Cipher.SECRET_KEY);
+        return (SecretKey) cipher.unwrap(data, symmetricKeyAlgorithm, Cipher.SECRET_KEY);
     }
 
-    static int wrapSecretKeyToInt(SecretKey secretKey, PublicKey publicKey)
+    static byte[] wrapSecretKey(SecretKey secretKey, PublicKey publicKey)
             throws NoSuchPaddingException, NoSuchAlgorithmException, IllegalBlockSizeException, InvalidKeyException
     {
         Cipher cipher = Cipher.getInstance(wrapAlgorithm);
         cipher.init(Cipher.WRAP_MODE, publicKey);
-        return RednetUtils.getIntFromBytes(cipher.wrap(secretKey));
+        return cipher.wrap(secretKey);
     }
 
-    static byte[] decryptMessage(int data, SecretKey secretKey)
-            throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException
+    static byte[] decryptMessage(byte[] data, SecretKey secretKey, IvParameterSpec spec)
+            throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException
     {
         Cipher cipher = Cipher.getInstance(cryptoAlgorithm);
-        cipher.init(Cipher.DECRYPT_MODE, secretKey);
-        return cipher.doFinal(RednetUtils.getBytesFromInt(data));
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, spec);
+        return cipher.doFinal(data);
     }
 
-    static int encryptMessage(byte[] data, SecretKey secretKey)
-            throws IllegalBlockSizeException, BadPaddingException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException
+    static byte[] encryptMessage(byte[] data, SecretKey secretKey, IvParameterSpec spec)
+            throws IllegalBlockSizeException, BadPaddingException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, InvalidAlgorithmParameterException
     {
         Cipher cipher = Cipher.getInstance(cryptoAlgorithm);
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey);
-        return RednetUtils.getIntFromBytes(cipher.doFinal(data));
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey, spec);
+        return cipher.doFinal(data);
     }
 
 }

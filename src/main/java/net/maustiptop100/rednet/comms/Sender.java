@@ -1,15 +1,16 @@
 package net.maustiptop100.rednet.comms;
 
 import net.maustiptop100.rednet.RednetSecurityUtils;
+import net.maustiptop100.rednet.RednetUtils;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import javax.crypto.spec.IvParameterSpec;
+import java.io.*;
 import java.net.Socket;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
@@ -29,18 +30,20 @@ public class Sender {
     }
 
     public void apply()
-            throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, IllegalBlockSizeException, InvalidKeyException, BadPaddingException {
+            throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, IllegalBlockSizeException, InvalidKeyException, BadPaddingException, ClassNotFoundException, InvalidAlgorithmParameterException {
         Socket socket = new Socket(this.target, this.port);
 
-        OutputStream out = socket.getOutputStream();
-        InputStream in = socket.getInputStream();
+        ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+        ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 
-        PublicKey publicKey = RednetSecurityUtils.int2PublicKey(in.read());
+        PublicKey publicKey = RednetSecurityUtils.bytes2PublicKey((byte[]) in.readObject());
 
         SecretKey secretKey = RednetSecurityUtils.generateSymmetric();
-        out.write(RednetSecurityUtils.wrapSecretKeyToInt(secretKey, publicKey));
+        out.writeObject(RednetSecurityUtils.wrapSecretKey(secretKey, publicKey));
+        IvParameterSpec spec = RednetSecurityUtils.generateParameters();
+        out.writeObject(spec.getIV());
 
-        out.write(RednetSecurityUtils.encryptMessage(this.content, secretKey));
+        out.writeObject(RednetSecurityUtils.encryptMessage(this.content, secretKey, spec));
     }
 
 }

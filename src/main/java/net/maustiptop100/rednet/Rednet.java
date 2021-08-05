@@ -3,28 +3,20 @@ package net.maustiptop100.rednet;
 import net.maustiptop100.rednet.comms.RednetServer;
 import net.maustiptop100.rednet.comms.Sender;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import java.io.IOException;
 import java.net.InetAddress;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 import java.util.List;
 import java.util.Vector;
-import java.util.function.BiFunction;
+import java.util.function.BiConsumer;
 
 public class Rednet {
 
     private int port;
 
-    private List<BiFunction<byte[], InetAddress, Void>> functionList = new Vector<>();
+    private List<BiConsumer<byte[], InetAddress>> functionList = new Vector<>();
     private RednetServer server;
 
     private Rednet() {
-        this.server = new RednetServer(this.port, this.functionList);
-        this.server.start();
+
     }
 
     public void send(byte[] data, String receiver) {
@@ -39,7 +31,7 @@ public class Rednet {
     /**
      * Adds a listener function
      */
-    public void onReceive(BiFunction<byte[], InetAddress, Void> function) {
+    public void onReceive(BiConsumer<byte[], InetAddress> function) {
         this.functionList.add(function);
     }
 
@@ -51,6 +43,9 @@ public class Rednet {
     {
         Rednet rednet = new Rednet();
         rednet.port = 4456;
+
+        rednet.server = new RednetServer(rednet.port, rednet.functionList);
+        rednet.server.start();
 
         return rednet;
     }

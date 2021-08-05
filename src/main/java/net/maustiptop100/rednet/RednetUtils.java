@@ -1,17 +1,8 @@
 package net.maustiptop100.rednet;
 
 import java.io.*;
-import java.nio.ByteBuffer;
 
 public interface RednetUtils {
-
-    static byte[] getBytesFromInt(int data) {
-        return ByteBuffer.allocate(4).putInt(data).array();
-    }
-
-    static int getIntFromBytes(byte[] data) {
-        return ByteBuffer.wrap(data).getInt();
-    }
 
     static Serializable bytes2Serializable(byte[] bytes)
             throws IOException, ClassNotFoundException, ClassCastException
